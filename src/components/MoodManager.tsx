@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Mood, MoodCategory, MOOD_SYMBOLS } from '../types';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical, Edit2, Check } from 'lucide-react';
 import {
   DndContext,
   closestCorners,
@@ -23,13 +23,106 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+
+const AVAILABLE_COLORS = [
+  'from-orange-400 to-pink-500',
+  'from-red-400 to-pink-500',
+  'from-green-400 to-emerald-500',
+  'from-blue-400 to-cyan-500',
+  'from-teal-400 to-blue-500',
+  'from-gray-400 to-slate-500',
+  'from-indigo-300 to-purple-400',
+  'from-blue-600 to-indigo-800',
+  'from-orange-600 to-red-700',
+  'from-red-600 to-rose-900',
+  'from-yellow-400 to-orange-500',
+  'from-purple-500 to-indigo-500',
+];
+
+const EditMoodModal = ({
+  mood,
+  onClose,
+  onSave,
+}: {
+  mood: Mood;
+  onClose: () => void;
+  onSave: (mood: Mood) => void;
+}) => {
+  const [name, setName] = useState(mood.name);
+  const [color, setColor] = useState(mood.color);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSave({ ...mood, name, color });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700 shadow-2xl"
+      >
+        <h3 className="text-xl font-bold text-white mb-4">Edit Mood</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-2">Color Theme</label>
+            <div className="grid grid-cols-6 gap-2">
+              {AVAILABLE_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`w-8 h-8 rounded-full bg-gradient-to-br ${c} transition-transform hover:scale-110 ${
+                    color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800 scale-110' : ''
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
 
 const SortableMoodItem: React.FC<{
   mood: Mood;
   onDelete: (id: string) => void;
+  onEdit: (mood: Mood) => void;
 }> = ({
   mood,
   onDelete,
+  onEdit,
 }) => {
   const {
     attributes,
@@ -76,12 +169,21 @@ const SortableMoodItem: React.FC<{
       </div>
       <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${mood.color} shadow-sm`} />
       <span className="font-medium text-slate-300 flex-1">{mood.name}</span>
-      <button
-        onClick={() => onDelete(mood.id)}
-        className="p-2 rounded-lg hover:bg-red-500/10 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-      >
-        <X className="w-4 h-4" />
-      </button>
+      
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <button
+          onClick={() => onEdit(mood)}
+          className="p-2 rounded-lg hover:bg-slate-800 text-slate-600 hover:text-indigo-400"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDelete(mood.id)}
+          className="p-2 rounded-lg hover:bg-red-500/10 text-slate-600 hover:text-red-400"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -90,10 +192,12 @@ const CategoryColumn: React.FC<{
   category: MoodCategory;
   moods: Mood[];
   onDelete: (id: string) => void;
+  onEdit: (mood: Mood) => void;
 }> = ({
   category,
   moods,
   onDelete,
+  onEdit,
 }) => {
   const { setNodeRef } = useSortable({
     id: category,
@@ -121,7 +225,7 @@ const CategoryColumn: React.FC<{
           strategy={verticalListSortingStrategy}
         >
           {moods.map((mood) => (
-            <SortableMoodItem key={mood.id} mood={mood} onDelete={onDelete} />
+            <SortableMoodItem key={mood.id} mood={mood} onDelete={onDelete} onEdit={onEdit} />
           ))}
         </SortableContext>
         {moods.length === 0 && (
@@ -135,10 +239,11 @@ const CategoryColumn: React.FC<{
 };
 
 export const MoodManager = () => {
-  const { moods, addMood, deleteMood, updateMood } = useApp();
+  const { moods, records, addMood, deleteMood, updateMood } = useApp();
   const [newMoodName, setNewMoodName] = useState('');
   const [newMoodCategory, setNewMoodCategory] = useState<MoodCategory>('neutral');
   const [activeDragItem, setActiveDragItem] = useState<Mood | null>(null);
+  const [editingMood, setEditingMood] = useState<Mood | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -168,6 +273,22 @@ export const MoodManager = () => {
       color: colors[newMoodCategory],
     });
     setNewMoodName('');
+  };
+
+  const handleDeleteWithConfirmation = (id: string) => {
+    const hasRecords = records.some((r) => r.moodId === id);
+    if (hasRecords) {
+      if (confirm('This mood has associated records. Deleting it will keep the records but the mood info might be lost. Are you sure?')) {
+        deleteMood(id);
+      }
+    } else {
+      deleteMood(id);
+    }
+  };
+
+  const handleUpdateMood = (mood: Mood) => {
+    updateMood(mood);
+    setEditingMood(null);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -269,7 +390,8 @@ export const MoodManager = () => {
               key={category}
               category={category}
               moods={moods.filter((m) => m.category === category)}
-              onDelete={deleteMood}
+              onDelete={handleDeleteWithConfirmation}
+              onEdit={setEditingMood}
             />
           ))}
         </div>
@@ -299,6 +421,16 @@ export const MoodManager = () => {
           document.body
         )}
       </DndContext>
+
+      <AnimatePresence>
+        {editingMood && (
+          <EditMoodModal
+            mood={editingMood}
+            onClose={() => setEditingMood(null)}
+            onSave={handleUpdateMood}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
