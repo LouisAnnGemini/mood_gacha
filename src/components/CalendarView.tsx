@@ -236,22 +236,23 @@ export const CalendarView = () => {
                 </div>
               </div>
 
-              {selectedMoodId && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">
-                    Intensity / Score
-                    {moods.find(m => m.id === selectedMoodId)?.category === 'neutral' ? ' (-10 to 10)' : ' (1 to 10)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={score}
-                    onChange={(e) => setScore(Number(e.target.value))}
-                    min={moods.find(m => m.id === selectedMoodId)?.category === 'neutral' ? -10 : 1}
-                    max={10}
-                    className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">
+                  Intensity / Score
+                  {selectedMoodId 
+                    ? (moods.find(m => m.id === selectedMoodId)?.category === 'neutral' ? ' (-10 to 10)' : ' (1 to 10)')
+                    : ' (Select mood first)'}
+                </label>
+                <input
+                  type="number"
+                  value={score}
+                  onChange={(e) => setScore(Number(e.target.value))}
+                  disabled={!selectedMoodId}
+                  min={selectedMoodId && moods.find(m => m.id === selectedMoodId)?.category === 'neutral' ? -10 : 1}
+                  max={10}
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Note</label>
