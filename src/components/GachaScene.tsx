@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { Card } from './Card';
@@ -216,72 +217,75 @@ export const GachaScene = () => {
       )}
 
       {/* Selection Modal Overlay */}
-      <AnimatePresence>
-        {gameState === 'selecting' && selectedMood && (
-          <motion.div
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(10px)' }}
-            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          >
+      {createPortal(
+        <AnimatePresence>
+          {gameState === 'selecting' && selectedMood && (
             <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-600 shadow-2xl flex flex-col items-center gap-6"
+              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              animate={{ opacity: 1, backdropFilter: 'blur(10px)' }}
+              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
             >
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-white mb-2">Confirm Selection</h3>
-                <p className="text-slate-400">Is this how you feel right now?</p>
-              </div>
-
-              <Card mood={selectedMood} isRevealed={true} size="md" className="shadow-none" />
-
-              <div className="w-full space-y-2">
-                <label className="text-sm text-slate-400 ml-1">
-                  Intensity / Score 
-                  {selectedMood.category === 'neutral' ? ' (-10 to 10)' : ' (1 to 10)'}
-                </label>
-                <input
-                  type="number"
-                  value={score}
-                  onChange={(e) => setScore(Number(e.target.value))}
-                  min={selectedMood.category === 'neutral' ? -10 : 1}
-                  max={10}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div className="w-full space-y-2">
-                <label className="text-sm text-slate-400 ml-1">Note (Optional)</label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Why do you feel this way?"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-24"
-                />
-              </div>
-
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={handleConfirm}
-                  className="w-full py-3 px-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
-                >
-                  <Check className="w-5 h-5" />
-                  Confirm Record
-                </button>
-              </div>
-              
-              <button 
-                onClick={() => setGameState('revealed')}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white"
+              <motion.div
+                initial={{ scale: 0.8, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.8, y: 50 }}
+                className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-600 shadow-2xl flex flex-col items-center gap-6 max-h-[90vh] overflow-y-auto"
               >
-                <X className="w-6 h-6" />
-              </button>
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-white mb-2">Confirm Selection</h3>
+                  <p className="text-slate-400">Is this how you feel right now?</p>
+                </div>
+
+                <Card mood={selectedMood} isRevealed={true} size="md" className="shadow-none flex-shrink-0" />
+
+                <div className="w-full space-y-2">
+                  <label className="text-sm text-slate-400 ml-1">
+                    Intensity / Score 
+                    {selectedMood.category === 'neutral' ? ' (-10 to 10)' : ' (1 to 10)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={score}
+                    onChange={(e) => setScore(Number(e.target.value))}
+                    min={selectedMood.category === 'neutral' ? -10 : 1}
+                    max={10}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+
+                <div className="w-full space-y-2">
+                  <label className="text-sm text-slate-400 ml-1">Note (Optional)</label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Why do you feel this way?"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-24"
+                  />
+                </div>
+
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={handleConfirm}
+                    className="w-full py-3 px-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                  >
+                    <Check className="w-5 h-5" />
+                    Confirm Record
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={() => setGameState('revealed')}
+                  className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
